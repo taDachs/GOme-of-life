@@ -1,4 +1,4 @@
-package board
+package gameoflife
 
 import (
     "math/rand"
@@ -33,11 +33,7 @@ func (c *Cell) isAliveNextGen(board *Board) bool {
     }
 
 
-    if (c.alive && numNeighbours == 2) || numNeighbours == 3 {
-        return true
-    } else {
-        return false
-    }
+    return (c.alive && numNeighbours == 2) || numNeighbours == 3
 }
 
 type Board struct {

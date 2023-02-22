@@ -1,4 +1,4 @@
-package board
+package gameoflife
 
 import (
     "testing"
@@ -6,6 +6,7 @@ import (
 )
 
 func TestCreateEmptyBoard(t *testing.T) {
+  t.Errorf("Test")
     board := CreateEmptyBoard(8, 8)
     if len(board.board) != 8 {
         t.Errorf("invalid size")
