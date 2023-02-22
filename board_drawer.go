@@ -8,8 +8,8 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-const width = 1920
-const height = 1080
+const width = 800
+const height = 800
 
 const res = 8
 const board_width = width / res
@@ -31,11 +31,17 @@ func Run() {
 
 
 	for !win.Closed() {
-        win.Clear(colornames.Skyblue)
-        drawBoard(board, win)
-		win.Update()
-        board.NextGen()
-        time.Sleep(50 * time.Millisecond)
+    if win.JustPressed(pixelgl.MouseButtonLeft) {
+      mouse_pos := win.MousePosition()
+      x := mouse_pos.X / res
+      y := mouse_pos.Y / res
+      board.SetCell(!board.IsAlive(int(x), int(y)), int(x), int(y))
+    }
+    win.Clear(colornames.Skyblue)
+    drawBoard(board, win)
+    win.Update()
+    board.NextGen()
+    time.Sleep(50 * time.Millisecond)
 	}
 }
 
