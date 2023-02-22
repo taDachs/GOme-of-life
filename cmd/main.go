@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-    pixelgl.Run(gameoflife.Run)
+  pixelgl.Run(gameoflife.Run)
 }

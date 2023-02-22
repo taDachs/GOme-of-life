@@ -17,7 +17,7 @@ const board_height = height / res
 
 func Run() {
     board := CreateEmptyBoard(board_width, board_height)
-    InitializeRandom(0.2)
+    board.InitializeRandom(0.2)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Game of life (in GO)",
@@ -34,7 +34,7 @@ func Run() {
         win.Clear(colornames.Skyblue)
         drawBoard(board, win)
 		win.Update()
-        NextGen()
+        board.NextGen()
         time.Sleep(50 * time.Millisecond)
 	}
 }
@@ -43,9 +43,9 @@ func drawBoard(board *Board, win *pixelgl.Window) {
     imd := imdraw.New(nil)
     imd.Color = colornames.Black
 
-    for y, row := range Board() {
+    for y, row := range board.Board() {
         for x := range row {
-            if IsAlive(x, y) {
+            if board.IsAlive(x, y) {
                 imd.Push(pixel.V(float64(x * res), float64(y * res)), pixel.V(float64((x + 1) * res), float64((y + 1) * res)))
                 imd.Rectangle(0)
             }
