@@ -39,15 +39,17 @@ func (bd *BoardDrawer) Run() {
 func (bd *BoardDrawer) handleClick(win *pixelgl.Window) {
   if win.JustPressed(pixelgl.MouseButtonLeft) {
     mouse_pos := win.MousePosition()
-    change := new(Change)
+
+    var change Change
     change.X = int(mouse_pos.X / bd.Res)
     change.Y = int(mouse_pos.Y / bd.Res)
     change.Alive = !bd.Game.Board.IsAlive(change.X, change.Y)
+    change.Gen = bd.Game.Board.Gen
 
-    bd.Game.Changes <- *change
+    bd.Game.Changes <- change
 
     changes := make([]Change, 1)
-    changes[0] = *change
+    changes[0] = change
     go bd.Game.Client.SendChanges(changes)
   }
 }

@@ -42,11 +42,10 @@ func main() {
   game.Inits     = make(chan gameoflife.Init, 10)
   game.Syncs     = make(chan gameoflife.Sync, 10)
   game.Client    = *client
-  game.HasSynced = false
 
-  game.GenFrequency    = 0.5
+  game.GenFrequency    = 10
   game.UpdateFrequency = 100
-  game.SyncInterval    = 1
+  game.SyncFrequency   = 10
 
 
   if game.IsHost {
