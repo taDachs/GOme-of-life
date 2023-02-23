@@ -15,19 +15,35 @@ type Board struct {
   Board         []byte
   Gen           uint
   Width, Height int
+  HWrap         bool
+  VWrap         bool
 }
 
 func (board *Board) isAliveNextGen(x, y int) bool {
   numNeighbours := 0
 
   for i := -1; i < 2; i++ {
-    nx := (x + i + board.Width) % board.Width
+    nx := x + i
+    if nx >= board.Width || nx < 0 {
+      if board.HWrap {
+        nx = (x + board.Width) % board.Width
+      } else {
+        continue
+      }
+    }
     for j := -1; j < 2; j++ {
       // skip itself
       if i == 0 && j == 0 {
         continue
       }
-      ny := (y + j + board.Height) % board.Height
+      ny := y + j
+      if ny >= board.Width || ny < 0 {
+        if board.VWrap {
+          ny = (y + board.Height) % board.Height
+        } else {
+          continue
+        }
+      }
 
       if board.IsAlive(nx, ny) {
         numNeighbours += 1
@@ -47,7 +63,7 @@ func CreateEmptyBoard(dx, dy int) *Board {
     }
   }
 
-  return &Board{board, 1, dx, dy}
+  return &Board{board, 1, dx, dy, false, false}
 }
 
 func (board *Board) NextGen() {
