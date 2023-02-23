@@ -5,7 +5,7 @@ var InitChannel = make(chan Init, 10)
 var SyncChannel = make(chan Sync, 10)
 
 type Change struct {
-  X, Y int
+  X, Y  int
   Alive bool
 }
 

@@ -56,7 +56,6 @@ func RunServer(port string, game *Game) {
   os.Exit(0)
 }
 
-
 func syncHandle(w http.ResponseWriter, r *http.Request) {
   var resp Sync
 
@@ -102,7 +101,7 @@ func updateHandle(w http.ResponseWriter, r *http.Request) {
 
 func initHandle(game *Game, w http.ResponseWriter, r *http.Request) {
   w.Header().Set("content-type", "application/json")
-  if game.Started  {
+  if game.Started {
     json, err := json.Marshal("Game already started")
 
     if err != nil {

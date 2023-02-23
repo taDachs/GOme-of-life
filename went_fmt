@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+go fmt .
+sed -i "s/\t/  /g" $(find -name '*.go' -type f)

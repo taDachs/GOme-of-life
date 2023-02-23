@@ -11,7 +11,7 @@ func TestCreateEmptyBoard(t *testing.T) {
     t.Errorf("invalid size")
   } else {
     for i := 0; i < 8; i++ {
-      for j := 0; j < 8; j++{
+      for j := 0; j < 8; j++ {
         if board.IsAlive(i, j) {
           t.Errorf("all cells should be dead")
         }
@@ -34,7 +34,7 @@ func TestInitializeRandom(t *testing.T) {
   board := CreateEmptyBoard(8, 8)
   board.InitializeRandom(0)
   for i := 0; i < 8; i++ {
-    for j := 0; j < 8; j++{
+    for j := 0; j < 8; j++ {
       if board.IsAlive(i, j) {
         t.Errorf("all cells should be dead")
       }
@@ -42,7 +42,7 @@ func TestInitializeRandom(t *testing.T) {
   }
   board.InitializeRandom(1)
   for i := 0; i < 8; i++ {
-    for j := 0; j < 8; j++{
+    for j := 0; j < 8; j++ {
       if !board.IsAlive(i, j) {
         t.Errorf("all cells should be alive")
       }

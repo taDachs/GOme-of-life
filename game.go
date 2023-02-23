@@ -5,8 +5,8 @@ import (
 )
 
 type Game struct {
-  Board *Board
+  Board   *Board
   Started bool
-  IsHost bool
-  Mutex sync.Mutex
+  IsHost  bool
+  Mutex   sync.Mutex
 }

@@ -12,8 +12,8 @@ func InitSeed() {
 }
 
 type Board struct {
-  Board []byte
-  Gen uint
+  Board         []byte
+  Gen           uint
   Width, Height int
 }
 
@@ -39,11 +39,10 @@ func (board *Board) isAliveNextGen(x, y int) bool {
 }
 
 func CreateEmptyBoard(dx, dy int) *Board {
-  board := make([]byte, int(math.Ceil(float64(dy) * float64(dx) / 8.0))) // 8 bits in a byte
+  board := make([]byte, int(math.Ceil(float64(dy)*float64(dx)/8.0))) // 8 bits in a byte
   for y := 0; y < dy; y++ {
     for x := 0; x < dx; x++ {
-      i := int(math.Trunc(float64(y * dx + x) / 8.0))
-      // offset := (y * dx + x) % 8
+      i := int(math.Trunc(float64(y*dx+x) / 8.0))
       board[i] = 0
     }
   }
@@ -64,8 +63,8 @@ func (board *Board) NextGen() {
 }
 
 func (board *Board) SetCell(alive bool, x, y int) {
-  i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
-  offset := (y * board.Width + x) % 8
+  i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
+  offset := (y*board.Width + x) % 8
   if alive {
     board.Board[i] |= (1 << offset)
   } else {
@@ -75,15 +74,15 @@ func (board *Board) SetCell(alive bool, x, y int) {
 
 func (board *Board) IsAlive(x, y int) bool {
   // return board.Board[y * board.Width + x]
-  i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
-  offset := (y * board.Width + x) % 8
-  return (board.Board[i] & byte(1 << offset)) > 0
+  i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
+  offset := (y*board.Width + x) % 8
+  return (board.Board[i] & byte(1<<offset)) > 0
 }
 
 func (board *Board) InitializeRandom(aliveFraction float32) {
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
-      if int(aliveFraction * 100) > rand.Intn(100) {
+      if int(aliveFraction*100) > rand.Intn(100) {
         board.SetCell(true, x, y)
       } else {
         board.SetCell(false, x, y)
@@ -96,9 +95,9 @@ func (board Board) String() string {
   output := "Board:\n"
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
-      i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
-      offset := (y * board.Width + x) % 8
-      if board.Board[i] & byte(1 << offset) > 0 {
+      i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
+      offset := (y*board.Width + x) % 8
+      if board.Board[i]&byte(1<<offset) > 0 {
         output += "#"
       } else {
         output += "-"

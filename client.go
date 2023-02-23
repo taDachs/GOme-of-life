@@ -1,8 +1,8 @@
 package gameoflife
 
 import (
-  "encoding/json"
   "bytes"
+  "encoding/json"
   "fmt"
   "net/http"
 )
@@ -30,7 +30,6 @@ func SendChanges(changes []Change, url string) {
 
   fmt.Println("Response status code:", resp.StatusCode)
 }
-
 
 func InitGame(url string) {
   req, err := http.NewRequest("Get", url, nil)

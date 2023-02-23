@@ -1,12 +1,12 @@
 package gameoflife
 
 import (
-  "time"
-  "github.com/faiface/pixel"
-  "github.com/faiface/pixel/pixelgl"
-  "github.com/faiface/pixel/imdraw"
-  "golang.org/x/image/colornames"
   "fmt"
+  "github.com/faiface/pixel"
+  "github.com/faiface/pixel/imdraw"
+  "github.com/faiface/pixel/pixelgl"
+  "golang.org/x/image/colornames"
+  "time"
 )
 
 const SYNC_INTERVAL = 1
@@ -22,13 +22,12 @@ func Run(update_url string, sync_url string, game *Game, width, height, res floa
     panic(err)
   }
 
-
   for !win.Closed() {
     if !game.Started {
       continue
     }
 
-    if game.IsHost && game.Board.Gen % SYNC_INTERVAL == 0 {
+    if game.IsHost && game.Board.Gen%SYNC_INTERVAL == 0 {
       go SyncGame(game, sync_url)
     }
 
@@ -76,7 +75,7 @@ func drawBoard(board *Board, win *pixelgl.Window, res int) {
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
       if board.IsAlive(x, y) {
-        imd.Push(pixel.V(float64(x * res), float64(y * res)), pixel.V(float64((x + 1) * res), float64((y + 1) * res)))
+        imd.Push(pixel.V(float64(x*res), float64(y*res)), pixel.V(float64((x+1)*res), float64((y+1)*res)))
         imd.Rectangle(0)
       }
     }
