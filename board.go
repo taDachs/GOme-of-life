@@ -2,12 +2,12 @@ package gameoflife
 
 import (
   "math/rand"
-  // "time"
+  "time"
 )
 
 func InitSeed() {
-  // rand.Seed(time.Now().UTC().UnixNano())
-  rand.Seed(1)
+  rand.Seed(time.Now().UTC().UnixNano())
+  // rand.Seed(1)
 }
 
 type Board struct {
