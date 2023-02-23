@@ -2,28 +2,28 @@ package gameoflife
 
 import (
   "time"
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/imdraw"
-	"golang.org/x/image/colornames"
+  "github.com/faiface/pixel"
+  "github.com/faiface/pixel/pixelgl"
+  "github.com/faiface/pixel/imdraw"
+  "golang.org/x/image/colornames"
   "fmt"
 )
 
 const SYNC_INTERVAL = 10
 
 func Run(update_url string, sync_url string, game *Game, width, height, res float64) {
-	cfg := pixelgl.WindowConfig{
-		Title:  "Game of life (in GO)",
-		Bounds: pixel.R(0, 0, width, height),
-		VSync:  true,
-	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		panic(err)
-	}
+  cfg := pixelgl.WindowConfig{
+    Title:  "Game of life (in GO)",
+    Bounds: pixel.R(0, 0, width, height),
+    VSync:  true,
+  }
+  win, err := pixelgl.NewWindow(cfg)
+  if err != nil {
+    panic(err)
+  }
 
 
-	for !win.Closed() {
+  for !win.Closed() {
     if !game.Started {
       continue
     }
@@ -35,24 +35,24 @@ func Run(update_url string, sync_url string, game *Game, width, height, res floa
     handleClick(game.Board, win, res, update_url)
 
     select {
-      case chg, ok := <-ChangeChannel:
-        if ok {
-            game.Board.SetCell(chg.Alive, chg.X, chg.Y)
-            fmt.Println("Setting cell: ", chg)
-        }
-      case sync, ok := <-SyncChannel:
-        if ok && !game.IsHost {
-          game.Board = &sync.Board
-          fmt.Println("Syncing game")
-        }
-      default:
+    case chg, ok := <-ChangeChannel:
+      if ok {
+        game.Board.SetCell(chg.Alive, chg.X, chg.Y)
+        fmt.Println("Setting cell: ", chg)
+      }
+    case sync, ok := <-SyncChannel:
+      if ok && !game.IsHost {
+        game.Board = &sync.Board
+        fmt.Println("Syncing game")
+      }
+    default:
     }
     win.Clear(colornames.Skyblue)
     drawBoard(game.Board, win, int(res))
     win.Update()
     game.Board.NextGen()
     time.Sleep(50 * time.Millisecond)
-	}
+  }
 }
 
 func handleClick(board *Board, win *pixelgl.Window, res float64, url string) {
@@ -70,17 +70,17 @@ func handleClick(board *Board, win *pixelgl.Window, res float64, url string) {
 }
 
 func drawBoard(board *Board, win *pixelgl.Window, res int) {
-    imd := imdraw.New(nil)
-    imd.Color = colornames.Black
+  imd := imdraw.New(nil)
+  imd.Color = colornames.Black
 
-    for y := 0; y < board.Height; y++ {
-        for x := 0; x < board.Width; x++ {
-            if board.IsAlive(x, y) {
-                imd.Push(pixel.V(float64(x * res), float64(y * res)), pixel.V(float64((x + 1) * res), float64((y + 1) * res)))
-                imd.Rectangle(0)
-            }
-        }
+  for y := 0; y < board.Height; y++ {
+    for x := 0; x < board.Width; x++ {
+      if board.IsAlive(x, y) {
+        imd.Push(pixel.V(float64(x * res), float64(y * res)), pixel.V(float64((x + 1) * res), float64((y + 1) * res)))
+        imd.Rectangle(0)
+      }
     }
+  }
 
-    imd.Draw(win)
+  imd.Draw(win)
 }

@@ -16,4 +16,3 @@ type Sync struct {
 type Init struct {
   Board Board
 }
-

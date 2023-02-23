@@ -1,12 +1,12 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"gameoflife"
-	"time"
+  "flag"
+  "fmt"
+  "gameoflife"
+  "time"
 
-	"github.com/faiface/pixel/pixelgl"
+  "github.com/faiface/pixel/pixelgl"
 )
 
 const width = 800
