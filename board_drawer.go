@@ -1,7 +1,7 @@
 package gameoflife
 
 import (
-  "fmt"
+  // "fmt"
   "github.com/faiface/pixel"
   "github.com/faiface/pixel/imdraw"
   "github.com/faiface/pixel/pixelgl"
@@ -10,8 +10,9 @@ import (
 )
 
 const SYNC_INTERVAL = 1
+const FRAME_RATE = 30
 
-func Run(update_url string, sync_url string, game *Game, width, height, res float64) {
+func Run(game *Game, width, height, res float64) {
   cfg := pixelgl.WindowConfig{
     Title:  "Game of life (in GO)",
     Bounds: pixel.R(0, 0, width, height),
@@ -23,48 +24,27 @@ func Run(update_url string, sync_url string, game *Game, width, height, res floa
   }
 
   for !win.Closed() {
-    if !game.Started {
-      continue
-    }
-
-    if game.IsHost && game.Board.Gen%SYNC_INTERVAL == 0 {
-      go SyncGame(game, sync_url)
-    }
-
-    handleClick(game.Board, win, res, update_url)
-
-    select {
-    case chg, ok := <-ChangeChannel:
-      if ok {
-        game.Board.SetCell(chg.Alive, chg.X, chg.Y)
-        fmt.Println("Setting cell: ", chg)
-      }
-    case sync, ok := <-SyncChannel:
-      if ok && !game.IsHost {
-        game.Board = &sync.Board
-        fmt.Println("Syncing game")
-      }
-    default:
-    }
+    handleClick(game, win, res)
     win.Clear(colornames.Skyblue)
     drawBoard(game.Board, win, int(res))
     win.Update()
-    game.Board.NextGen()
-    time.Sleep(50 * time.Millisecond)
+    time.Sleep(1000 / FRAME_RATE * time.Millisecond)
   }
 }
 
-func handleClick(board *Board, win *pixelgl.Window, res float64, url string) {
+func handleClick(game *Game, win *pixelgl.Window, res float64) {
   if win.JustPressed(pixelgl.MouseButtonLeft) {
     mouse_pos := win.MousePosition()
     change := new(Change)
     change.X = int(mouse_pos.X / res)
     change.Y = int(mouse_pos.Y / res)
-    change.Alive = !board.IsAlive(change.X, change.Y)
-    board.SetCell(change.Alive, change.X, change.Y)
+    change.Alive = !game.Board.IsAlive(change.X, change.Y)
+
+    game.Changes <- *change
+
     changes := make([]Change, 1)
     changes[0] = *change
-    SendChanges(changes, url)
+    go game.Client.SendChanges(changes)
   }
 }
 

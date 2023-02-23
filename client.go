@@ -7,14 +7,20 @@ import (
   "net/http"
 )
 
-func SendChanges(changes []Change, url string) {
+type Client struct {
+  UpdateUrl string
+  SyncUrl   string
+  InitUrl   string
+}
+
+func (c *Client) SendChanges(changes []Change) {
   buf, err := json.Marshal(changes)
   if err != nil {
     fmt.Println("Error while create buffer from json:", err)
     return
   }
 
-  req, err := http.NewRequest("POST", url, bytes.NewBuffer(buf))
+  req, err := http.NewRequest("POST", c.UpdateUrl, bytes.NewBuffer(buf))
   if err != nil {
     fmt.Println("Error creating request:", err)
     return
@@ -31,8 +37,11 @@ func SendChanges(changes []Change, url string) {
   fmt.Println("Response status code:", resp.StatusCode)
 }
 
-func InitGame(url string) {
-  req, err := http.NewRequest("Get", url, nil)
+func (c *Client) InitGame(game *Game) {
+  var init Init
+  init.Board = *game.Board
+  buf, err := json.Marshal(init)
+  req, err := http.NewRequest("POST", c.InitUrl, bytes.NewBuffer(buf))
   if err != nil {
     fmt.Println("Error creating request:", err)
     return
@@ -44,22 +53,14 @@ func InitGame(url string) {
     fmt.Println("Error sending request:", err)
     return
   }
-  var init Init
-  err = json.NewDecoder(resp.Body).Decode(&init)
-
-  if err != nil {
-    fmt.Println("Error decoding response: ", err)
-    return
-  }
-
-  InitChannel <- init
+  game.Inits <- init
 
   defer resp.Body.Close()
 
   fmt.Println("Response status code: ", resp.StatusCode)
 }
 
-func SyncGame(game *Game, url string) {
+func (c *Client) SyncGame(game *Game) {
   var sync Sync
   sync.Board = *game.Board
   buf, err := json.Marshal(sync)
@@ -68,7 +69,7 @@ func SyncGame(game *Game, url string) {
     return
   }
 
-  req, err := http.NewRequest("POST", url, bytes.NewBuffer(buf))
+  req, err := http.NewRequest("POST", c.SyncUrl, bytes.NewBuffer(buf))
   if err != nil {
     fmt.Println("Error creating request:", err)
     return

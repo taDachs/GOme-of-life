@@ -15,21 +15,23 @@ import (
   "github.com/gorilla/mux"
 )
 
-func RunServer(port string, game *Game) {
+type Server struct {
+  Changes chan Change
+  Syncs   chan Sync
+  Inits   chan Init
+}
+
+func (s *Server) Run(port string) {
   var wait time.Duration
 
   r := mux.NewRouter()
   api := r.PathPrefix("/api").Subrouter()
 
-  if game.IsHost {
-    api.HandleFunc("/init", func(w http.ResponseWriter, r *http.Request) {
-      initHandle(game, w, r)
-    })
-  }
+  api.HandleFunc("/init", s.initHandle).Methods(http.MethodPost)
 
-  api.HandleFunc("/sync", syncHandle)
+  api.HandleFunc("/sync", func(w http.ResponseWriter, r *http.Request) { s.syncHandle(w, r) })
 
-  api.HandleFunc("/update", updateHandle).Methods(http.MethodPost)
+  api.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) { s.updateHandle(w, r) }).Methods(http.MethodPost)
 
   srv := &http.Server{
     Addr:         ":" + port,
@@ -56,7 +58,7 @@ func RunServer(port string, game *Game) {
   os.Exit(0)
 }
 
-func syncHandle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) syncHandle(w http.ResponseWriter, r *http.Request) {
   var resp Sync
 
   err := json.NewDecoder(r.Body).Decode(&resp)
@@ -65,7 +67,7 @@ func syncHandle(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  SyncChannel <- resp
+  s.Syncs <- resp
 
   w.Header().Set("content-type", "application/json")
   w.WriteHeader(http.StatusOK)
@@ -82,7 +84,7 @@ func HttpErrWrite(msg string, err error, status int, w http.ResponseWriter) {
   return
 }
 
-func updateHandle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) updateHandle(w http.ResponseWriter, r *http.Request) {
   var resp []Change
 
   err := json.NewDecoder(r.Body).Decode(&resp)
@@ -92,41 +94,25 @@ func updateHandle(w http.ResponseWriter, r *http.Request) {
   }
 
   for _, chg := range resp {
-    ChangeChannel <- chg
+    s.Changes <- chg
   }
 
   w.Header().Set("content-type", "application/json")
   w.WriteHeader(http.StatusOK)
 }
 
-func initHandle(game *Game, w http.ResponseWriter, r *http.Request) {
+func (s *Server) initHandle(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("content-type", "application/json")
-  if game.Started {
-    json, err := json.Marshal("Game already started")
+  var resp Init
 
-    if err != nil {
-      fmt.Println("Error while converting init to json: ", err)
-    }
-
-    w.WriteHeader(http.StatusInternalServerError)
-    w.Write(json)
-    return
-  }
-  var init Init
-  init.Board = *game.Board
-
-  json, err := json.Marshal(init)
-
+  err := json.NewDecoder(r.Body).Decode(&resp)
   if err != nil {
-    fmt.Println("Error while converting init to json: ", err)
-    w.WriteHeader(http.StatusInternalServerError)
-    w.Write(json)
+    HttpErrWrite("Error while reading body", err, http.StatusUnprocessableEntity, w)
     return
   }
 
   w.WriteHeader(http.StatusOK)
-  w.Write(json)
-  game.Started = true
+  s.Inits <- resp
 }
 
 type HttpErrorBody struct {

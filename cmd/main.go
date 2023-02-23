@@ -32,32 +32,55 @@ func main() {
 
   board := gameoflife.CreateEmptyBoard(board_width, board_height)
 
+  client := new(gameoflife.Client)
+  client.InitUrl   = init_url
+  client.UpdateUrl = update_url
+  client.SyncUrl   = sync_url
+
   game := new(gameoflife.Game)
   game.IsHost = is_host
   game.Board = board
   game.Started = false
+  game.Changes= make(chan gameoflife.Change, 10)
+  game.Inits = make(chan gameoflife.Init, 10)
+  game.Syncs = make(chan gameoflife.Sync, 10)
+  game.Client = *client
+
 
   if is_host {
     gameoflife.InitSeed()
     board.InitializeRandom(0.2)
-  } else {
-    go func() {
-      init := <- gameoflife.InitChannel
-      game.Board = &init.Board
-      game.Started = true
-      fmt.Println("Updated board")
-    }()
   }
 
-  go gameoflife.RunServer(*own_port, game)
+  server := new(gameoflife.Server)
+  server.Inits   = game.Inits
+  server.Syncs   = game.Syncs
+  server.Changes = game.Changes
+
+  go server.Run(*own_port)
 
   // ensure server started
   time.Sleep(1 * time.Second)
 
-  if !is_host {
-    gameoflife.InitGame(init_url)
+  // background run game loop
+  ticker := time.NewTicker(50 * time.Millisecond)
+  quit := make(chan struct{})
+  go func() {
+    for {
+      select {
+      case <- ticker.C:
+        game.TickCallback()
+      case <- quit:
+        ticker.Stop()
+        return
+      }
+    }
+  }()
+
+  if is_host {
+    go client.InitGame(game)
   }
 
   // i dont know if you do it like that bu GO sounds good
-  pixelgl.Run(func() {gameoflife.Run(update_url, sync_url, game, width, height, res)})
+  pixelgl.Run(func() {gameoflife.Run(game, width, height, res)})
 }

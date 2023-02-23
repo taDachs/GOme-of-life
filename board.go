@@ -63,7 +63,7 @@ func CreateEmptyBoard(dx, dy int) *Board {
     }
   }
 
-  return &Board{board, 1, dx, dy, false, false}
+  return &Board{board, 0, dx, dy, false, false}
 }
 
 func (board *Board) NextGen() {
