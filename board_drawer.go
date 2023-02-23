@@ -9,7 +9,7 @@ import (
   "time"
 )
 
-const SYNC_INTERVAL = 1
+const SYNC_INTERVAL = 5
 const FRAME_RATE = 30
 
 func Run(game *Game, width, height, res float64) {

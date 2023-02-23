@@ -22,23 +22,20 @@ func main() {
   own_port := flag.String("own-port", "8080", "IP address to connect to")
   is_host_arg := flag.String("is-host", "false", "If host")
   flag.Parse()
+
   url := "http://" + *arg + ":" + *partner_port + "/api"
-  update_url := url + "/update"
-  sync_url := url + "/sync"
-  init_url := url + "/init"
-  is_host := *is_host_arg == "true"
   fmt.Println("own port: ", *own_port)
   fmt.Println("partner url: ", url)
 
   board := gameoflife.CreateEmptyBoard(board_width, board_height)
 
   client := new(gameoflife.Client)
-  client.InitUrl   = init_url
-  client.UpdateUrl = update_url
-  client.SyncUrl   = sync_url
+  client.InitUrl   = url + "/init"
+  client.UpdateUrl = url + "/update"
+  client.SyncUrl   = url + "/sync"
 
   game := new(gameoflife.Game)
-  game.IsHost = is_host
+  game.IsHost = *is_host_arg == "true"
   game.Board = board
   game.Started = false
   game.Changes= make(chan gameoflife.Change, 10)
@@ -47,7 +44,7 @@ func main() {
   game.Client = *client
 
 
-  if is_host {
+  if game.IsHost {
     gameoflife.InitSeed()
     board.InitializeRandom(0.2)
   }
@@ -57,30 +54,16 @@ func main() {
   server.Syncs   = game.Syncs
   server.Changes = game.Changes
 
+
   go server.Run(*own_port)
+  go game.Run()
 
   // ensure server started
   time.Sleep(1 * time.Second)
 
-  // background run game loop
-  ticker := time.NewTicker(50 * time.Millisecond)
-  quit := make(chan struct{})
-  go func() {
-    for {
-      select {
-      case <- ticker.C:
-        game.TickCallback()
-      case <- quit:
-        ticker.Stop()
-        return
-      }
-    }
-  }()
-
-  if is_host {
+  if game.IsHost {
     go client.InitGame(game)
   }
 
-  // i dont know if you do it like that bu GO sounds good
   pixelgl.Run(func() {gameoflife.Run(game, width, height, res)})
 }
