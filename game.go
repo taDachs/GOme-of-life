@@ -15,13 +15,15 @@ type Game struct {
   Syncs   chan Sync
   Inits   chan Init
   Client  Client
-}
 
-const GEN_FREQUENCY = 20
+  GenFrequency    float64 // in hertz
+  UpdateFrequency float64
+  SyncInterval    uint
+}
 
 func (game *Game) Run() {
   // background game update loop
-  update_ticker := time.NewTicker(50 * time.Millisecond)
+  update_ticker := time.NewTicker(time.Duration(1000/game.UpdateFrequency) * time.Millisecond)
   quit := make(chan struct{})
   go func() {
     for {
@@ -35,7 +37,7 @@ func (game *Game) Run() {
     }
   }()
 
-  next_gen_ticker := time.NewTicker(1000 / GEN_FREQUENCY * time.Millisecond)
+  next_gen_ticker := time.NewTicker(time.Duration(1000/game.GenFrequency) * time.Millisecond)
   go func() {
     for {
       select {
@@ -47,15 +49,13 @@ func (game *Game) Run() {
       }
     }
   }()
-
 }
 
 func (game *Game) UpdateTickCallback() {
   game.Mutex.Lock()
 
-  if game.IsHost && game.Board.Gen%SYNC_INTERVAL == 0 && game.Board.Gen > 0 {
-    game.Client.SyncGame(game)
-    fmt.Println("Requesting Sync")
+  if game.Board.Gen%game.SyncInterval == 0 && game.Board.Gen > 0 {
+    game.PerformSync()
   }
 
   select {
@@ -63,11 +63,6 @@ func (game *Game) UpdateTickCallback() {
     if ok {
       game.Board.SetCell(chg.Alive, chg.X, chg.Y)
       fmt.Println("Setting cell: ", chg)
-    }
-  case sync, ok := <-game.Syncs:
-    if ok && !game.IsHost {
-      game.Board = &sync.Board
-      fmt.Println("Syncing game")
     }
   case init, ok := <-game.Inits:
     if ok && !game.Started {
@@ -88,5 +83,18 @@ func (game *Game) NextGenTickCallback() {
   if game.Started {
     game.Board.NextGen()
   }
+
   defer game.Mutex.Unlock()
+}
+
+func (game *Game) PerformSync() {
+  var sync Sync
+  sync.Board = *game.Board
+  game.Client.SendSync(sync)
+  fmt.Println("Requesting Sync")
+  sync, ok := <-game.Syncs
+  if ok && !game.IsHost {
+    game.Board = &sync.Board
+    fmt.Println("Syncing game")
+  }
 }

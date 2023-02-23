@@ -19,9 +19,10 @@ type Server struct {
   Changes chan Change
   Syncs   chan Sync
   Inits   chan Init
+  Port    string
 }
 
-func (s *Server) Run(port string) {
+func (s *Server) Run() {
   var wait time.Duration
 
   r := mux.NewRouter()
@@ -34,7 +35,7 @@ func (s *Server) Run(port string) {
   api.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) { s.updateHandle(w, r) }).Methods(http.MethodPost)
 
   srv := &http.Server{
-    Addr:         ":" + port,
+    Addr:         ":" + s.Port,
     WriteTimeout: time.Second * 15,
     ReadTimeout:  time.Second * 15,
     IdleTimeout:  time.Second * 60,

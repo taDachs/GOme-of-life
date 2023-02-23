@@ -35,13 +35,17 @@ func main() {
   client.SyncUrl   = url + "/sync"
 
   game := new(gameoflife.Game)
-  game.IsHost = *is_host_arg == "true"
-  game.Board = board
+  game.IsHost  = *is_host_arg == "true"
+  game.Board   = board
   game.Started = false
-  game.Changes= make(chan gameoflife.Change, 10)
-  game.Inits = make(chan gameoflife.Init, 10)
-  game.Syncs = make(chan gameoflife.Sync, 10)
-  game.Client = *client
+  game.Changes = make(chan gameoflife.Change, 10)
+  game.Inits   = make(chan gameoflife.Init, 10)
+  game.Syncs   = make(chan gameoflife.Sync, 10)
+  game.Client  = *client
+
+  game.GenFrequency    = 0.5
+  game.UpdateFrequency = 100
+  game.SyncInterval    = 1
 
 
   if game.IsHost {
@@ -53,17 +57,27 @@ func main() {
   server.Inits   = game.Inits
   server.Syncs   = game.Syncs
   server.Changes = game.Changes
+  server.Port    = *own_port
 
-
-  go server.Run(*own_port)
+  go server.Run()
   go game.Run()
 
   // ensure server started
   time.Sleep(1 * time.Second)
 
+  var init gameoflife.Init
+  init.Board = *game.Board
   if game.IsHost {
-    go client.InitGame(game)
+    go client.SendInit(init)
+    game.Inits <- init
   }
 
-  pixelgl.Run(func() {gameoflife.Run(game, width, height, res)})
+  var drawer gameoflife.BoardDrawer
+  drawer.Game = game
+  drawer.Width = width
+  drawer.Height = height
+  drawer.Res = res
+
+  // run gui
+  pixelgl.Run(drawer.Run)
 }

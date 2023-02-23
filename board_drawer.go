@@ -9,13 +9,17 @@ import (
   "time"
 )
 
-const SYNC_INTERVAL = 5
 const FRAME_RATE = 30
 
-func Run(game *Game, width, height, res float64) {
+type BoardDrawer struct {
+  Game               *Game
+  Width, Height, Res float64
+}
+
+func (bd *BoardDrawer) Run() {
   cfg := pixelgl.WindowConfig{
     Title:  "Game of life (in GO)",
-    Bounds: pixel.R(0, 0, width, height),
+    Bounds: pixel.R(0, 0, bd.Width, bd.Height),
     VSync:  true,
   }
   win, err := pixelgl.NewWindow(cfg)
@@ -24,38 +28,38 @@ func Run(game *Game, width, height, res float64) {
   }
 
   for !win.Closed() {
-    handleClick(game, win, res)
+    bd.handleClick(win)
     win.Clear(colornames.Skyblue)
-    drawBoard(game.Board, win, int(res))
+    bd.drawBoard(win)
     win.Update()
     time.Sleep(1000 / FRAME_RATE * time.Millisecond)
   }
 }
 
-func handleClick(game *Game, win *pixelgl.Window, res float64) {
+func (bd *BoardDrawer) handleClick(win *pixelgl.Window) {
   if win.JustPressed(pixelgl.MouseButtonLeft) {
     mouse_pos := win.MousePosition()
     change := new(Change)
-    change.X = int(mouse_pos.X / res)
-    change.Y = int(mouse_pos.Y / res)
-    change.Alive = !game.Board.IsAlive(change.X, change.Y)
+    change.X = int(mouse_pos.X / bd.Res)
+    change.Y = int(mouse_pos.Y / bd.Res)
+    change.Alive = !bd.Game.Board.IsAlive(change.X, change.Y)
 
-    game.Changes <- *change
+    bd.Game.Changes <- *change
 
     changes := make([]Change, 1)
     changes[0] = *change
-    go game.Client.SendChanges(changes)
+    go bd.Game.Client.SendChanges(changes)
   }
 }
 
-func drawBoard(board *Board, win *pixelgl.Window, res int) {
+func (bd *BoardDrawer) drawBoard(win *pixelgl.Window) {
   imd := imdraw.New(nil)
   imd.Color = colornames.Black
 
-  for y := 0; y < board.Height; y++ {
-    for x := 0; x < board.Width; x++ {
-      if board.IsAlive(x, y) {
-        imd.Push(pixel.V(float64(x*res), float64(y*res)), pixel.V(float64((x+1)*res), float64((y+1)*res)))
+  for y := 0; y < bd.Game.Board.Height; y++ {
+    for x := 0; x < bd.Game.Board.Width; x++ {
+      if bd.Game.Board.IsAlive(x, y) {
+        imd.Push(pixel.V(float64(x)*bd.Res, float64(y)*bd.Res), pixel.V(float64(x+1)*bd.Res, float64(y+1)*bd.Res))
         imd.Rectangle(0)
       }
     }
