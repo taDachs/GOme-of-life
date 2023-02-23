@@ -1,6 +1,7 @@
 package gameoflife
 
 import (
+  "math"
   "math/rand"
   "time"
 )
@@ -11,7 +12,7 @@ func InitSeed() {
 }
 
 type Board struct {
-  Board []bool
+  Board []byte
   Gen uint
   Width, Height int
 }
@@ -22,6 +23,7 @@ func (board *Board) isAliveNextGen(x, y int) bool {
   for i := -1; i < 2; i++ {
     nx := (x + i + board.Width) % board.Width
     for j := -1; j < 2; j++ {
+      // skip itself
       if i == 0 && j == 0 {
         continue
       }
@@ -37,10 +39,12 @@ func (board *Board) isAliveNextGen(x, y int) bool {
 }
 
 func CreateEmptyBoard(dx, dy int) *Board {
-  board := make([]bool, dy * dx)
+  board := make([]byte, int(math.Ceil(float64(dy) * float64(dx) / 8.0))) // 8 bits in a byte
   for y := 0; y < dy; y++ {
     for x := 0; x < dx; x++ {
-      board[y * dx + x] = false
+      i := int(math.Trunc(float64(y * dx + x) / 8.0))
+      // offset := (y * dx + x) % 8
+      board[i] = 0
     }
   }
 
@@ -60,11 +64,20 @@ func (board *Board) NextGen() {
 }
 
 func (board *Board) SetCell(alive bool, x, y int) {
-  board.Board[y * board.Width + x] = alive
+  i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
+  offset := (y * board.Width + x) % 8
+  if alive {
+    board.Board[i] |= (1 << offset)
+  } else {
+    board.Board[i] &= ^(1 << offset)
+  }
 }
 
 func (board *Board) IsAlive(x, y int) bool {
-  return board.Board[y * board.Width + x]
+  // return board.Board[y * board.Width + x]
+  i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
+  offset := (y * board.Width + x) % 8
+  return (board.Board[i] & byte(1 << offset)) > 0
 }
 
 func (board *Board) InitializeRandom(aliveFraction float32) {
@@ -83,7 +96,9 @@ func (board Board) String() string {
   output := "Board:\n"
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
-      if board.Board[y * board.Width + x] {
+      i := int(math.Trunc(float64(y * board.Width + x) / 8.0))
+      offset := (y * board.Width + x) % 8
+      if board.Board[i] & byte(1 << offset) > 0 {
         output += "#"
       } else {
         output += "-"

@@ -9,7 +9,7 @@ import (
   "fmt"
 )
 
-const SYNC_INTERVAL = 10
+const SYNC_INTERVAL = 1
 
 func Run(update_url string, sync_url string, game *Game, width, height, res float64) {
   cfg := pixelgl.WindowConfig{
