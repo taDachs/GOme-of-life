@@ -35,13 +35,14 @@ func main() {
   client.SyncUrl   = url + "/sync"
 
   game := new(gameoflife.Game)
-  game.IsHost  = *is_host_arg == "true"
-  game.Board   = board
-  game.Started = false
-  game.Changes = make(chan gameoflife.Change, 10)
-  game.Inits   = make(chan gameoflife.Init, 10)
-  game.Syncs   = make(chan gameoflife.Sync, 10)
-  game.Client  = *client
+  game.IsHost    = *is_host_arg == "true"
+  game.Board     = board
+  game.Started   = false
+  game.Changes   = make(chan gameoflife.Change, 10)
+  game.Inits     = make(chan gameoflife.Init, 10)
+  game.Syncs     = make(chan gameoflife.Sync, 10)
+  game.Client    = *client
+  game.HasSynced = false
 
   game.GenFrequency    = 0.5
   game.UpdateFrequency = 100

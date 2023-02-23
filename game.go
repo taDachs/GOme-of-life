@@ -7,14 +7,15 @@ import (
 )
 
 type Game struct {
-  Board   *Board
-  Started bool
-  IsHost  bool
-  Mutex   sync.Mutex
-  Changes chan Change
-  Syncs   chan Sync
-  Inits   chan Init
-  Client  Client
+  Board     *Board
+  Started   bool
+  IsHost    bool
+  Mutex     sync.Mutex
+  Changes   chan Change
+  Syncs     chan Sync
+  Inits     chan Init
+  Client    Client
+  HasSynced bool
 
   GenFrequency    float64 // in hertz
   UpdateFrequency float64
@@ -54,7 +55,7 @@ func (game *Game) Run() {
 func (game *Game) UpdateTickCallback() {
   game.Mutex.Lock()
 
-  if game.Board.Gen%game.SyncInterval == 0 && game.Board.Gen > 0 {
+  if !game.HasSynced && game.Board.Gen%game.SyncInterval == 0 && game.Board.Gen > 0 {
     game.PerformSync()
   }
 
@@ -84,6 +85,7 @@ func (game *Game) NextGenTickCallback() {
     game.Board.NextGen()
   }
 
+  game.HasSynced = false
   defer game.Mutex.Unlock()
 }
 
@@ -97,4 +99,5 @@ func (game *Game) PerformSync() {
     game.Board = &sync.Board
     fmt.Println("Syncing game")
   }
+  game.HasSynced = true
 }
