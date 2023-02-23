@@ -1,0 +1,15 @@
+repos:
+- repo: local
+  hooks:
+    - id: went-fmt
+      name: Went Format
+      description: Formats go files
+      entry: ./went_fmt
+      language: script
+      types: [text]
+      files: '.*\.go$'
+- repo: https://github.com/dnephin/pre-commit-golang
+  rev: v0.5.1
+  hooks:
+    - id: go-unit-tests
+    - id: go-build
