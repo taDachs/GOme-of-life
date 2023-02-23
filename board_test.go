@@ -8,19 +8,15 @@ import (
 func TestCreateEmptyBoard(t *testing.T) {
   t.Errorf("Test")
     board := CreateEmptyBoard(8, 8)
-    if len(board.board) != 8 {
+    if len(board.Board) != 8 {
         t.Errorf("invalid size")
     } else {
         for i := 0; i < 8; i++ {
-            if len(board.board[i]) != 8 {
-                t.Errorf("invalid size")
-            } else {
                 for j := 0; j < 8; j++{
                     if board.IsAlive(i, j) {
                         t.Errorf("all cells should be dead")
                     }
                 }
-            }
         }
     }
 }

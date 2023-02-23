@@ -2,25 +2,30 @@ package gameoflife
 
 import (
     "math/rand"
-    "time"
+    // "time"
 )
 
-func init() {
-    rand.Seed(time.Now().UTC().UnixNano())
+func InitSeed() {
+    // rand.Seed(time.Now().UTC().UnixNano())
+    rand.Seed(1)
 }
 
-type Cell struct {
-    alive bool
-    x, y int
+type Board struct {
+    Board []bool
+    Gen uint
+    Width, Height int
 }
 
-func (c *Cell) isAliveNextGen(board *Board) bool {
+func (board *Board) isAliveNextGen(x, y int) bool {
     numNeighbours := 0
 
     for i := -1; i < 2; i++ {
-        nx := (c.x + i + board.dx) % board.dx
+        nx := (x + i + board.Width) % board.Width
         for j := -1; j < 2; j++ {
-            ny := (c.y + j + board.dy) % board.dy
+            if i == 0 && j == 0 {
+              continue
+            }
+            ny := (y + j + board.Height) % board.Height
 
             if board.IsAlive(nx, ny) {
                 numNeighbours += 1
@@ -28,59 +33,43 @@ func (c *Cell) isAliveNextGen(board *Board) bool {
         }
     }
 
-    if c.alive {
-        numNeighbours -= 1
-    }
-
-
-    return (c.alive && numNeighbours == 2) || numNeighbours == 3
-}
-
-type Board struct {
-    board [][]Cell
-    gen uint
-    dx, dy int
-}
-
-func (b *Board) Board() [][]Cell {
-    return b.board
+    return (board.IsAlive(x, y) && numNeighbours == 2) || numNeighbours == 3
 }
 
 func CreateEmptyBoard(dx, dy int) *Board {
-    board := make([][]Cell, dy)
+    board := make([]bool, dy * dx)
     for y := 0; y < dy; y++ {
-        board[y] = make([]Cell, dx)
         for x := 0; x < dx; x++ {
-            board[y][x] = Cell{false, x, y}
+            board[y * dx + x] = false
         }
     }
 
-    return &Board{board, 0, dx, dy}
+    return &Board{board, 1, dx, dy}
 }
 
 func (board *Board) NextGen() {
-    newBoard := CreateEmptyBoard(board.dx, board.dy)
-    for y, row := range board.board {
-        for x, c := range row {
-            newBoard.SetCell(c.isAliveNextGen(board), x, y)
-        }
+    newBoard := CreateEmptyBoard(board.Width, board.Height)
+    for y := 0; y < board.Height; y++ {
+      for x := 0; x < board.Width; x++ {
+        newBoard.SetCell(board.isAliveNextGen(x, y), x, y)
+      }
     }
 
-    board.board = newBoard.board
-    board.gen++
+    board.Board = newBoard.Board
+    board.Gen++
 }
 
 func (board *Board) SetCell(alive bool, x, y int) {
-    board.board[y][x].alive = alive
+    board.Board[y * board.Width + x] = alive
 }
 
 func (board *Board) IsAlive(x, y int) bool {
-    return board.board[y][x].alive
+    return board.Board[y * board.Width + x]
 }
 
 func (board *Board) InitializeRandom(aliveFraction float32) {
-    for y, row := range board.board {
-        for x := range row {
+    for y := 0; y < board.Height; y++ {
+        for x := 0; x < board.Width; x++ {
             if int(aliveFraction * 100) > rand.Intn(100) {
                 board.SetCell(true, x, y)
             } else {
@@ -91,10 +80,10 @@ func (board *Board) InitializeRandom(aliveFraction float32) {
 }
 
 func (board Board) String() string {
-    output := ""
-    for _, row := range board.board {
-        for _, c := range row {
-            if c.alive {
+    output := "Board:\n"
+    for y := 0; y < board.Height; y++ {
+        for x := 0; x < board.Width; x++ {
+            if board.Board[y * board.Width + x] {
                 output += "#"
             } else {
                 output += "-"
