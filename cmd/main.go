@@ -4,7 +4,10 @@ import (
   "flag"
   "fmt"
   "gameoflife"
+  "os"
+  "strconv"
   "time"
+  "net"
 
   "github.com/faiface/pixel/pixelgl"
 )
@@ -17,22 +20,47 @@ const board_width = width / res
 const board_height = height / res
 
 func main() {
-  arg := flag.String("ip", "0.0.0.0", "IP address to connect to")
+  partner_ip := flag.String("ip", "127.0.0.1", "IP address to connect to")
   partner_port := flag.String("partner-port", "8081", "IP address to connect to")
   own_port := flag.String("own-port", "8080", "IP address to connect to")
+  partner_udp_port_arg := flag.String("partner-udp-port", "1234", "IP address to connect to")
+  own_udp_port_arg := flag.String("own-udp-port", "4321", "IP address to connect to")
   is_host_arg := flag.String("is-host", "false", "If host")
   flag.Parse()
 
-  url := "http://" + *arg + ":" + *partner_port + "/api"
+  url := "http://" + *partner_ip + ":" + *partner_port + "/api"
   fmt.Println("own port: ", *own_port)
   fmt.Println("partner url: ", url)
 
   board := gameoflife.CreateEmptyBoard(board_width, board_height)
 
+  own_udp_port, err := strconv.Atoi(*own_udp_port_arg)
+  if err != nil {
+    fmt.Println(*own_udp_port_arg, " is not a number")
+    os.Exit(1)
+  }
+  addr := net.UDPAddr{
+      Port: own_udp_port,
+      IP: net.ParseIP("127.0.0.1"),
+  }
+  conn, err := net.ListenUDP("udp", &addr)
+  if err != nil {
+    println("ResolveUDPAddr failed:", err.Error())
+    os.Exit(1)
+  }
+
+
+  partner_udp_port, err := strconv.Atoi(*partner_udp_port_arg)
+  if err != nil {
+    fmt.Println(*partner_udp_port_arg, " is not a number")
+    os.Exit(1)
+  }
   client := new(gameoflife.Client)
   client.InitUrl   = url + "/init"
   client.UpdateUrl = url + "/update"
-  client.SyncUrl   = url + "/sync"
+  client.UdpPort   = partner_udp_port
+  client.IP = *partner_ip
+  client.UdpSocket = conn
 
   game := new(gameoflife.Game)
   game.IsHost    = *is_host_arg == "true"
@@ -58,6 +86,7 @@ func main() {
   server.Syncs   = game.Syncs
   server.Changes = game.Changes
   server.Port    = *own_port
+  server.UdpSocket = conn
 
   go server.Run()
   go game.Run()

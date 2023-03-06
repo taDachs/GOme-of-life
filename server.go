@@ -4,8 +4,8 @@ import (
   "context"
   "encoding/json"
   "fmt"
-
   "log"
+  "net"
   "net/http"
   "os"
   "os/signal"
@@ -16,10 +16,11 @@ import (
 )
 
 type Server struct {
-  Changes chan Change
-  Syncs   chan Sync
-  Inits   chan Init
-  Port    string
+  Changes   chan Change
+  Syncs     chan Sync
+  Inits     chan Init
+  Port      string
+  UdpSocket *net.UDPConn
 }
 
 func (s *Server) Run() {
@@ -30,7 +31,7 @@ func (s *Server) Run() {
 
   api.HandleFunc("/init", s.initHandle).Methods(http.MethodPost)
 
-  api.HandleFunc("/sync", func(w http.ResponseWriter, r *http.Request) { s.syncHandle(w, r) })
+  go s.syncHandle()
 
   api.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) { s.updateHandle(w, r) }).Methods(http.MethodPost)
 
@@ -59,19 +60,26 @@ func (s *Server) Run() {
   os.Exit(0)
 }
 
-func (s *Server) syncHandle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) syncHandle() {
   var resp Sync
 
-  err := json.NewDecoder(r.Body).Decode(&resp)
-  if err != nil {
-    HttpErrWrite("Error while reading body", err, http.StatusUnprocessableEntity, w)
-    return
+  for {
+    buf := make([]byte, 16384) // 16kb
+    n, _, err := s.UdpSocket.ReadFrom(buf)
+    if err != nil {
+      log.Fatal(err)
+      continue
+    }
+
+    var board Board
+
+    err = json.Unmarshal(buf[:n], &board)
+    if err != nil {
+      continue
+    }
+    resp.Board = board
+    s.Syncs <- resp
   }
-
-  s.Syncs <- resp
-
-  w.Header().Set("content-type", "application/json")
-  w.WriteHeader(http.StatusOK)
 }
 
 func HttpErrWrite(msg string, err error, status int, w http.ResponseWriter) {
