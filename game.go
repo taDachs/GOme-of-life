@@ -83,14 +83,19 @@ func (game *Game) NextGenTickCallback() {
 
 func (game *Game) PerformSync() {
   game.Mutex.Lock()
+  defer game.Mutex.Unlock()
+
   var sync Sync
   sync.Board = *game.Board
-  game.Client.SendSync(sync)
-  fmt.Println("Requesting Sync")
-  sync, ok := <-game.Syncs
-  if ok && !game.IsHost {
-    game.Board = &sync.Board
-    fmt.Println("Syncing game")
+  if game.IsHost {
+    game.Client.SendSync(sync)
   }
-  defer game.Mutex.Unlock()
+  if !game.IsHost {
+    fmt.Println("Requesting Sync")
+    sync, ok := <-game.Syncs
+    if ok {
+      game.Board = &sync.Board
+      fmt.Println("Syncing game")
+    }
+  }
 }

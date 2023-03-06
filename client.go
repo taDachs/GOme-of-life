@@ -4,13 +4,17 @@ import (
   "bytes"
   "encoding/json"
   "fmt"
+  "net"
   "net/http"
+  "os"
 )
 
 type Client struct {
   UpdateUrl string
-  SyncUrl   string
   InitUrl   string
+  IP        string
+  UdpPort   int
+  UdpSocket *net.UDPConn
 }
 
 func (c *Client) SendChanges(changes []Change) {
@@ -58,25 +62,20 @@ func (c *Client) SendInit(init Init) {
 }
 
 func (c *Client) SendSync(sync Sync) {
-  buf, err := json.Marshal(sync)
+  addr := net.UDPAddr{
+    Port: c.UdpPort,
+    IP:   net.ParseIP(c.IP),
+  }
+
+  buf, err := json.Marshal(sync.Board)
   if err != nil {
     fmt.Println("Error while create buffer from json:", err)
     return
   }
 
-  req, err := http.NewRequest("POST", c.SyncUrl, bytes.NewBuffer(buf))
+  _, err = c.UdpSocket.WriteToUDP(buf, &addr)
   if err != nil {
-    fmt.Println("Error creating request:", err)
-    return
+    println("Write failed:", err.Error())
+    os.Exit(1)
   }
-
-  client := &http.Client{}
-  resp, err := client.Do(req)
-  if err != nil {
-    fmt.Println("Error sending request:", err)
-    return
-  }
-  defer resp.Body.Close()
-
-  fmt.Println("Response status code:", resp.StatusCode)
 }
