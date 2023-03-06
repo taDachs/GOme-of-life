@@ -11,6 +11,7 @@ type Game struct {
 
   Started bool
   IsHost  bool
+  Player  Player
   Mutex   sync.Mutex
   Changes chan Change
   Syncs   chan Sync
@@ -54,9 +55,9 @@ func (game *Game) UpdateTickCallback() {
         game.Changes <- chg
       } else if chg.Gen < game.Board.Gen {
         fmt.Println("Change from the past, applying now: ", chg)
-        game.Board.SetCell(chg.Alive, chg.X, chg.Y)
+        game.Board.SetCell(chg.Alive, chg.X, chg.Y, chg.Player)
       } else {
-        game.Board.SetCell(chg.Alive, chg.X, chg.Y)
+        game.Board.SetCell(chg.Alive, chg.X, chg.Y, chg.Player)
       }
     }
   case init, ok := <-game.Inits:

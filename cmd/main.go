@@ -12,8 +12,8 @@ import (
   "github.com/faiface/pixel/pixelgl"
 )
 
-const width = 400
-const height = 800
+const width = 500
+const height = 1000
 
 const res = 8
 const board_width = width / res
@@ -70,6 +70,12 @@ func main() {
   game.Inits     = make(chan gameoflife.Init, 10)
   game.Syncs     = make(chan gameoflife.Sync, 10)
   game.Client    = *client
+
+  if game.IsHost {
+    game.Player = gameoflife.PLAYER_ONE
+  } else {
+    game.Player = gameoflife.PLAYER_TWO
+  }
 
   game.GenFrequency    = 10
   game.UpdateFrequency = 100

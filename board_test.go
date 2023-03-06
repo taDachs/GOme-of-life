@@ -22,7 +22,7 @@ func TestCreateEmptyBoard(t *testing.T) {
 
 func TestNextGen(t *testing.T) {
   board := CreateEmptyBoard(8, 8)
-  board.SetCell(true, 0, 0) // breaks other tests somehow
+  board.SetCell(true, 0, 0, NONE) // breaks other tests somehow
   board.NextGen()
   if board.IsAlive(0, 0) {
     t.Errorf("cell should be dead")
@@ -56,10 +56,10 @@ func TestZombieCell(t *testing.T) {
   if board.IsAlive(0, 0) {
     t.Error("this cell should be dead")
   }
-  board.SetCell(true, 6, 6)
-  board.SetCell(true, 6, 7)
-  board.SetCell(true, 7, 6)
-  board.SetCell(true, 7, 7)
+  board.SetCell(true, 6, 6, NONE)
+  board.SetCell(true, 6, 7, NONE)
+  board.SetCell(true, 7, 6, NONE)
+  board.SetCell(true, 7, 7, NONE)
 
   for i := 0; i < 20; i++ {
     board.NextGen()
@@ -71,10 +71,10 @@ func TestZombieCell(t *testing.T) {
 
 func TestStillLife(t *testing.T) {
   board := CreateEmptyBoard(8, 8)
-  board.SetCell(true, 6, 6)
-  board.SetCell(true, 6, 7)
-  board.SetCell(true, 7, 6)
-  board.SetCell(true, 7, 7)
+  board.SetCell(true, 6, 6, NONE)
+  board.SetCell(true, 6, 7, NONE)
+  board.SetCell(true, 7, 6, NONE)
+  board.SetCell(true, 7, 7, NONE)
 
   for i := 0; i < 20; i++ {
     board.NextGen()
