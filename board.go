@@ -1,7 +1,6 @@
 package gameoflife
 
 import (
-  "math"
   "math/rand"
   "time"
 )
@@ -12,7 +11,7 @@ func InitSeed() {
 }
 
 type Board struct {
-  Board         []byte
+  Board         ByteBoard
   Gen           uint
   Width, Height int
   HWrap         bool
@@ -37,7 +36,7 @@ func (board *Board) isAliveNextGen(x, y int) bool {
         continue
       }
       ny := y + j
-      if ny >= board.Width || ny < 0 {
+      if ny >= board.Height || ny < 0 {
         if board.VWrap {
           ny = (y + board.Height) % board.Height
         } else {
@@ -45,32 +44,34 @@ func (board *Board) isAliveNextGen(x, y int) bool {
         }
       }
 
-      if board.IsAlive(nx, ny) {
+      if board.Board.IsAlive(nx, ny) {
         numNeighbours += 1
       }
     }
   }
 
-  return (board.IsAlive(x, y) && numNeighbours == 2) || numNeighbours == 3
+  return (board.Board.IsAlive(x, y) && numNeighbours == 2) || numNeighbours == 3
+}
+
+func (b *Board) IsAlive(x, y int) bool {
+  return b.Board.IsAlive(x, y)
+}
+
+func (b *Board) SetCell(alive bool, x, y int) {
+  b.Board.SetCell(alive, x, y)
 }
 
 func CreateEmptyBoard(dx, dy int) *Board {
-  board := make([]byte, int(math.Ceil(float64(dy)*float64(dx)/8.0))) // 8 bits in a byte
-  for y := 0; y < dy; y++ {
-    for x := 0; x < dx; x++ {
-      i := int(math.Trunc(float64(y*dx+x) / 8.0))
-      board[i] = 0
-    }
-  }
+  board := CreateEmptyByteBoard(dx, dy)
 
-  return &Board{board, 0, dx, dy, false, false}
+  return &Board{*board, 0, dx, dy, false, false}
 }
 
 func (board *Board) NextGen() {
   newBoard := CreateEmptyBoard(board.Width, board.Height)
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
-      newBoard.SetCell(board.isAliveNextGen(x, y), x, y)
+      newBoard.Board.SetCell(board.isAliveNextGen(x, y), x, y)
     }
   }
 
@@ -78,30 +79,13 @@ func (board *Board) NextGen() {
   board.Gen++
 }
 
-func (board *Board) SetCell(alive bool, x, y int) {
-  i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
-  offset := (y*board.Width + x) % 8
-  if alive {
-    board.Board[i] |= (1 << offset)
-  } else {
-    board.Board[i] &= ^(1 << offset)
-  }
-}
-
-func (board *Board) IsAlive(x, y int) bool {
-  // return board.Board[y * board.Width + x]
-  i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
-  offset := (y*board.Width + x) % 8
-  return (board.Board[i] & byte(1<<offset)) > 0
-}
-
 func (board *Board) InitializeRandom(aliveFraction float32) {
   for y := 0; y < board.Height; y++ {
     for x := 0; x < board.Width; x++ {
       if int(aliveFraction*100) > rand.Intn(100) {
-        board.SetCell(true, x, y)
+        board.Board.SetCell(true, x, y)
       } else {
-        board.SetCell(false, x, y)
+        board.Board.SetCell(false, x, y)
       }
     }
   }
@@ -109,17 +93,6 @@ func (board *Board) InitializeRandom(aliveFraction float32) {
 
 func (board Board) String() string {
   output := "Board:\n"
-  for y := 0; y < board.Height; y++ {
-    for x := 0; x < board.Width; x++ {
-      i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
-      offset := (y*board.Width + x) % 8
-      if board.Board[i]&byte(1<<offset) > 0 {
-        output += "#"
-      } else {
-        output += "-"
-      }
-    }
-    output += "\n"
-  }
+  output += board.Board.String()
   return output
 }

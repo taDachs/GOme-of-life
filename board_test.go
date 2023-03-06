@@ -7,7 +7,7 @@ import (
 
 func TestCreateEmptyBoard(t *testing.T) {
   board := CreateEmptyBoard(8, 8)
-  if len(board.Board) != 8 {
+  if len(board.Board.Board) != 8 {
     t.Errorf("invalid size")
   } else {
     for i := 0; i < 8; i++ {

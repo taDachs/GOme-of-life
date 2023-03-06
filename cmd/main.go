@@ -12,7 +12,7 @@ import (
   "github.com/faiface/pixel/pixelgl"
 )
 
-const width = 800
+const width = 400
 const height = 800
 
 const res = 8

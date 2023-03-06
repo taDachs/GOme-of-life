@@ -46,6 +46,12 @@ func (bd *BoardDrawer) handleClick(win *pixelgl.Window) {
     change.Alive = !bd.Game.Board.IsAlive(change.X, change.Y)
     change.Gen = bd.Game.Board.Gen
 
+    if bd.Game.IsHost {
+      change.Player = PLAYER_ONE
+    } else {
+      change.Player = PLAYER_TWO
+    }
+
     bd.Game.Changes <- change
 
     changes := make([]Change, 1)
