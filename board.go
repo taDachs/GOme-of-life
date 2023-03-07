@@ -10,15 +10,24 @@ func InitSeed() {
   // rand.Seed(1)
 }
 
+const NUMBER_OBJECTIVES int = 4
+
+type Point struct {
+  X, Y int
+}
+
 type Board struct {
-  Board          ByteBoard
-  PlayerOneBoard ByteBoard
-  PlayerTwoBoard ByteBoard
+  Board               ByteBoard
+  PlayerOneBoard      ByteBoard
+  PlayerTwoBoard      ByteBoard
+  PlayerOneObjectives []Point
+  PlayerTwoObjectives []Point
 
   Gen           uint
   Width, Height int
   HWrap         bool
   VWrap         bool
+  Deadzone      int
 }
 
 func (board *Board) isAliveNextGen(x, y int) bool {
@@ -81,11 +90,40 @@ func (b *Board) IsPlayerTwo(x, y int) bool {
 }
 
 func CreateEmptyBoard(dx, dy int) *Board {
-  board := CreateEmptyByteBoard(dx, dy)
-  player_one_board := CreateEmptyByteBoard(dx, dy)
-  player_two_board := CreateEmptyByteBoard(dx, dy)
+  board := new(Board)
+  board.Board = *CreateEmptyByteBoard(dx, dy)
+  board.PlayerOneBoard = *CreateEmptyByteBoard(dx, dy)
+  board.PlayerTwoBoard = *CreateEmptyByteBoard(dx, dy)
 
-  return &Board{*board, *player_one_board, *player_two_board, 0, dx, dy, false, false}
+  board.Gen = 0
+  board.Width = dx
+  board.Height = dy
+  board.VWrap = false
+  board.HWrap = false
+  return board
+}
+
+func (b *Board) SetupPlayerAreas(deadzone float64) {
+  b.Deadzone = int(float64(b.Height) * deadzone)
+
+  h_spacing := b.Width / (NUMBER_OBJECTIVES + 1)
+  v_spacing := b.Deadzone / 3
+
+  for i := 1; i <= NUMBER_OBJECTIVES; i++ {
+    for xi := 0; xi <= 1; xi++ {
+      for yi := 0; yi <= 1; yi++ {
+        x := i*h_spacing - xi
+        y1 := v_spacing - yi
+
+        y2 := b.Height - y1 - 1
+        b.SetCell(true, x, y1, PLAYER_ONE)
+        b.SetCell(true, x, y2, PLAYER_TWO)
+
+        b.PlayerOneObjectives = append(b.PlayerOneObjectives, Point{x, y1})
+        b.PlayerTwoObjectives = append(b.PlayerTwoObjectives, Point{x, y2})
+      }
+    }
+  }
 }
 
 func (b *Board) NextGen() {
@@ -94,6 +132,7 @@ func (b *Board) NextGen() {
     for x := 0; x < b.Width; x++ {
       is_alive := b.isAliveNextGen(x, y)
       new_born := is_alive && !b.IsAlive(x, y)
+      died := !is_alive && b.IsAlive(x, y)
 
       current_player := b.getCurrentPlayer(x, y)
       dominant_player := b.getDominantPlayer(x, y)
@@ -103,6 +142,10 @@ func (b *Board) NextGen() {
       } else {
         newBoard.SetCell(is_alive, x, y, current_player)
       }
+
+      if died {
+        b.updateObjectives(x, y)
+      }
     }
   }
 
@@ -110,6 +153,27 @@ func (b *Board) NextGen() {
   b.PlayerOneBoard = newBoard.PlayerOneBoard
   b.PlayerTwoBoard = newBoard.PlayerTwoBoard
   b.Gen += 1
+}
+
+func (b *Board) updateObjectives(x, y int) {
+  if b.IsPlayerOneObjective(x, y) {
+    var new_objectives []Point
+    for _, p := range b.PlayerOneObjectives {
+      if !(p.X == x && p.Y == y) {
+        new_objectives = append(new_objectives, p)
+      }
+    }
+    b.PlayerOneObjectives = new_objectives
+  }
+  if b.IsPlayerTwoObjective(x, y) {
+    var new_objectives []Point
+    for _, p := range b.PlayerTwoObjectives {
+      if !(p.X == x && p.Y == y) {
+        new_objectives = append(new_objectives, p)
+      }
+    }
+    b.PlayerTwoObjectives = new_objectives
+  }
 }
 
 func (b *Board) getCurrentPlayer(x, y int) Player {
@@ -149,10 +213,10 @@ func (b *Board) getDominantPlayer(x, y int) Player {
         }
       }
 
-      if b.PlayerOneBoard.IsAlive(nx, ny) {
+      if b.IsPlayerOne(nx, ny) {
         p1 += 1
       }
-      if b.PlayerTwoBoard.IsAlive(nx, ny) {
+      if b.IsPlayerTwo(nx, ny) {
         p2 += 1
       }
     }
@@ -167,9 +231,26 @@ func (b *Board) getDominantPlayer(x, y int) Player {
   }
 }
 
+func (b *Board) IsPlayerOneAlive() bool {
+  for _, p := range b.PlayerOneObjectives {
+    if b.IsPlayerOne(p.X, p.Y) {
+      return true
+    }
+  }
+  return false
+}
+
+func (b *Board) IsPlayerTwoAlive() bool {
+  for _, p := range b.PlayerTwoObjectives {
+    if b.IsPlayerTwo(p.X, p.Y) {
+      return true
+    }
+  }
+  return false
+}
+
 func (board *Board) InitializeRandom(aliveFraction float32) {
-  deadzone := int(float64(board.Height) * 0.1)
-  for y := deadzone; y < board.Height-deadzone; y++ {
+  for y := board.Deadzone; y < board.Height-board.Deadzone; y++ {
     for x := 0; x < board.Width; x++ {
       if int(aliveFraction*100) > rand.Intn(100) {
         board.Board.SetCell(true, x, y)
@@ -183,6 +264,40 @@ func (board *Board) InitializeRandom(aliveFraction float32) {
       }
     }
   }
+}
+
+func (b *Board) IsPlayerOneObjective(x, y int) bool {
+  for _, p := range b.PlayerOneObjectives {
+    if p.X == x && p.Y == y {
+      return true
+    }
+  }
+  return false
+}
+
+func (b *Board) IsPlayerTwoObjective(x, y int) bool {
+  for _, p := range b.PlayerTwoObjectives {
+    if p.X == x && p.Y == y {
+      return true
+    }
+  }
+  return false
+}
+
+func (b *Board) IsObjective(x, y int) bool {
+  return b.IsPlayerOneObjective(x, y) || b.IsPlayerTwoObjective(x, y)
+}
+
+func (b *Board) IsClickAllowed(x, y int, player Player) bool {
+  if player == PLAYER_ONE {
+    return y < b.Deadzone
+  }
+
+  if player == PLAYER_TWO {
+    return y >= b.Height-b.Deadzone
+  }
+
+  return true
 }
 
 func (board Board) String() string {

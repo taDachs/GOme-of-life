@@ -15,6 +15,8 @@ import (
 const width = 500
 const height = 1000
 
+const DEADZONE = 0.2
+
 const res = 8
 const board_width = width / res
 const board_height = height / res
@@ -33,6 +35,7 @@ func main() {
   fmt.Println("partner url: ", url)
 
   board := gameoflife.CreateEmptyBoard(board_width, board_height)
+  board.SetupPlayerAreas(DEADZONE)
 
   own_udp_port, err := strconv.Atoi(*own_udp_port_arg)
   if err != nil {

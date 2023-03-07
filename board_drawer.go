@@ -2,11 +2,12 @@ package gameoflife
 
 import (
   // "fmt"
+  "time"
+
   "github.com/faiface/pixel"
   "github.com/faiface/pixel/imdraw"
   "github.com/faiface/pixel/pixelgl"
   "golang.org/x/image/colornames"
-  "time"
 )
 
 const FRAME_RATE = 30
@@ -33,13 +34,21 @@ func (bd *BoardDrawer) Run() {
     win.Clear(colornames.White)
 
     imd := imdraw.New(nil)
-    deadzone := float64(bd.Height) * 0.1
+    deadzone := float64(bd.Game.Board.Deadzone) * bd.Res
 
-    imd.Color = colornames.Turquoise
+    if bd.Game.Player == PLAYER_ONE {
+      imd.Color = colornames.Turquoise
+    } else {
+      imd.Color = colornames.Pink
+    }
     imd.Push(pixel.V(0, 0), pixel.V(bd.Width, deadzone))
     imd.Rectangle(0)
 
-    imd.Color = colornames.Orange
+    if bd.Game.Player == PLAYER_ONE {
+      imd.Color = colornames.Pink
+    } else {
+      imd.Color = colornames.Turquoise
+    }
     imd.Push(pixel.V(0, bd.Height), pixel.V(bd.Width, bd.Height-deadzone))
     imd.Rectangle(0)
     imd.Draw(win)
@@ -51,11 +60,16 @@ func (bd *BoardDrawer) Run() {
 }
 
 func (bd *BoardDrawer) handleClick(win *pixelgl.Window) {
-  if win.JustPressed(pixelgl.MouseButtonLeft) {
+  if win.Pressed(pixelgl.MouseButtonLeft) {
     mouse_pos := win.MousePosition()
 
     var change Change
     change.X, change.Y = bd.screenToBoard(mouse_pos.X, mouse_pos.Y)
+
+    if !bd.Game.Board.IsClickAllowed(change.X, change.Y, bd.Game.Player) {
+      return
+    }
+
     change.Alive = !bd.Game.Board.IsAlive(change.X, change.Y)
     change.Gen = bd.Game.Board.Gen
 
@@ -90,21 +104,28 @@ func (bd *BoardDrawer) drawBoard(win *pixelgl.Window) {
 
   for y := 0; y < bd.Game.Board.Height; y++ {
     for x := 0; x < bd.Game.Board.Width; x++ {
+      screen_x1, screen_y1 := bd.boardToScreen(x, y)
+      screen_x2, screen_y2 := bd.boardToScreen(x+1, y+1)
       if bd.Game.Board.IsAlive(x, y) {
         imd.Color = colornames.Black
         if bd.Game.Board.IsPlayerOne(x, y) {
-          imd.Color = colornames.Blue
+          if bd.Game.Board.IsPlayerOneObjective(x, y) {
+            imd.Color = colornames.Purple
+          } else {
+            imd.Color = colornames.Blue
+          }
         }
         if bd.Game.Board.IsPlayerTwo(x, y) {
-          imd.Color = colornames.Red
+          if bd.Game.Board.IsPlayerTwoObjective(x, y) {
+            imd.Color = colornames.Orange
+          } else {
+            imd.Color = colornames.Red
+          }
         }
-        board_x1, board_y1 := bd.boardToScreen(x, y)
-        board_x2, board_y2 := bd.boardToScreen(x+1, y+1)
-        imd.Push(pixel.V(board_x1, board_y1), pixel.V(board_x2, board_y2))
+        imd.Push(pixel.V(screen_x1, screen_y1), pixel.V(screen_x2, screen_y2))
         imd.Rectangle(0)
       }
     }
   }
-
   imd.Draw(win)
 }

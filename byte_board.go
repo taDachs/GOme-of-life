@@ -38,7 +38,6 @@ func (board *ByteBoard) SetCell(alive bool, x, y int) {
 }
 
 func (board *ByteBoard) IsAlive(x, y int) bool {
-  // return board.Board[y * board.Width + x]
   i := int(math.Trunc(float64(y*board.Width+x) / 8.0))
   offset := (y*board.Width + x) % 8
   return (board.Board[i] & byte(1<<offset)) > 0

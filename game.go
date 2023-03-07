@@ -10,6 +10,7 @@ type Game struct {
   Board *Board
 
   Started bool
+  Running bool
   IsHost  bool
   Player  Player
   Mutex   sync.Mutex
@@ -45,6 +46,7 @@ func (game *Game) Run() {
 
 func (game *Game) UpdateTickCallback() {
   game.Mutex.Lock()
+  defer game.Mutex.Unlock()
 
   select {
   case chg, ok := <-game.Changes:
@@ -70,17 +72,22 @@ func (game *Game) UpdateTickCallback() {
     }
   default:
   }
-
-  defer game.Mutex.Unlock()
 }
 
 func (game *Game) NextGenTickCallback() {
   game.Mutex.Lock()
+  defer game.Mutex.Unlock()
   if game.IsHost && game.Started {
     game.Board.NextGen()
   }
-
-  defer game.Mutex.Unlock()
+  if !game.Board.IsPlayerOneAlive() {
+    fmt.Println("PLAYER 2 WON")
+    game.Started = false
+  }
+  if !game.Board.IsPlayerTwoAlive() {
+    fmt.Println("PLAYER 1 WON")
+    game.Started = false
+  }
 }
 
 func (game *Game) PerformSync() {
